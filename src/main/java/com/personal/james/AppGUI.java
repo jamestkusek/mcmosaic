@@ -82,11 +82,6 @@ public class AppGUI {
         buttonsPanel.add(button2);
         buttonsPanel.add(button3);
 
-
-
-
-
-
         appGUI.add(titlePanel,BorderLayout.NORTH);
         appGUI.add(buttonsPanel,BorderLayout.CENTER);
         appGUI.add(bottomPanel,BorderLayout.SOUTH);
@@ -96,6 +91,11 @@ public class AppGUI {
         return appGUI;
     }
 
+    /**
+     * Updates the GUI to display info from the Application class
+     * TODO: make sure at least 2-3 seconds between messages
+     * @param text a String object
+     */
     public static void reportInfo(String text) {
         transformReport.setText(text);
     }

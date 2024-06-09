@@ -24,12 +24,13 @@ public class Application {
     static JFrame gui;
 
     /**
-     * runs command line interface and executes methods needed to transform image.
-     *
-     * @param args
-     * @throws IOException
+     * creates a JFrame GUI and users I/O directories if first time running the jar
+     * @param args a String array object
      */
     public static void main(String[] args){
+        new File("images/input").mkdirs();
+        new File("images/output").mkdirs();
+
         gui = AppGUI.generate();
 
     }
@@ -41,9 +42,6 @@ public class Application {
         File inputDirectory = new File("images/input");
         File[] files = inputDirectory.listFiles();
 
-        if (files.length == 0) {
-            AppGUI.reportInfo("No files found in the input folder.");
-        }
         for (File inputImage : files) {
 
             List<String> supportedTypes = List.of("png","jpg","wbmp","gif","jpeg","bmp");
@@ -72,19 +70,19 @@ public class Application {
             }
 
         }
-        AppGUI.reportInfo(filesProcessed + " file(s) transferred in " + ((System.nanoTime() - startTime) / 1000000000.0) + " seconds.");
+        if (files.length == 0) {
+            AppGUI.reportInfo("No files found in the input folder.");
+        }
+        else {
+            AppGUI.reportInfo(filesProcessed + " file(s) transferred in " + ((System.nanoTime() - startTime) / 1000000000.0) + " seconds.");
+        }
 
     }
 
-    /**
-     * Create a list of Texture objects to be used by the Replace threads.
-     * @return a list of Texture objects
-     */
 
     /**
-     * Takes a BufferedImage and uses multi-threading to put a Minecraft filter on the image, saving the output image in the project.
-     * @param img
-     * @throws IOException
+     * Takes a BufferedImage and uses multi-threading to transform the image, saving the output to a local folder.
+     * @param img a BufferedImage object
      */
     public static BufferedImage transformImage(BufferedImage img) {
 
@@ -129,8 +127,8 @@ public class Application {
         return img;
     }
     /**
-     * Loads the user-submitted image from the project,
-     * @return
+     * Loads local image files
+     * @return a BufferedImage object
      */
     public static BufferedImage loadImage(File file) {
         try {
@@ -147,9 +145,9 @@ public class Application {
     /**
      * Given a source image and co-ordinate, will return the average Color of a 16x16 area of the image with top left hand
      * corner at the given co-ordinate
-     * @param img
-     * @param startX
-     * @param startY
+     * @param img a BufferedImage object
+     * @param startX an int
+     * @param startY an int
      * @return a Color object representing the average color of the desired 16x16 area
      */
     public static Color findAvgBlockColor(BufferedImage img, int startX, int startY, int width, int height) {
@@ -172,8 +170,8 @@ public class Application {
 
     /**
      * Given a Color, List of Texture objects, this method will find the Texture who's average color is closest to the given color
-     * @param avgColorOfBlock
-     * @param textureImages
+     * @param avgColorOfBlock a Color object
+     * @param textureImages a List of Texture objects
      * @return Texture object who's average image color is closest to avgColorOfBlock
      */
     public static Texture findClosestTextureTo(Color avgColorOfBlock, List<Texture> textureImages){
@@ -200,7 +198,10 @@ public class Application {
     }
 
 
-
+    /**
+     * generate a List of Texture objects from a local text file, using a local directory of images
+     * @return a List of Texture Objects
+     */
     public static List<Texture> loadTextures() {
         List<Texture> textureImages = new ArrayList<>();
         Scanner scanner = null;
