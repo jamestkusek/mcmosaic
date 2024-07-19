@@ -27,32 +27,35 @@ Here are some examples of what the program can do with images of different resol
 
 ![before/after comparison of the famous photo "Lunch atop a skyscraper"](external-resources/examples/lunch.png "before-after-lunch")
 
+## Requirements
+- Java 21 or higher
+
+- Maven 3.8 or higher
+
 ## Installation
 
-Download the latest release and run Application.jar
+extract zip file and install with 
+```CLI
+mvn clean install
+```
 
 ## Usage
 Use the application to add images to the input folder, transform said images and view them in the output folder
 (Supported filetypes: JPEG, PNG, BMP, WBMP, GIF*)
 
-
-This program works on resolutions from 1x1 up to ~15000x15000 (I haven't tested any higher because then the program eats up a lot of RAM). Because Minecraft's default image textures are 16x16, the effect of this filter is more pronounced and visible on smaller images.
-
+This program works on resolutions from 1x1 up to ~15000x15000 (the latter uses a lot of resources) 
 
 *GIF isn't properly supported yet, only a static image (first frame of GIF) is transformed. Support for the GIF format is planned in the future. Maybe.
 
 
 
-## Support
-
-idk email me, maybe I will respond
-
 
 ## Authors and acknowledgment
 The creators of the minecraft textures. Thanks guys.
+
 ## License
 
-Do whatever you want with this code.
+N/A
 
 ## Project status
 
