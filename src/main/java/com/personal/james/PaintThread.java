@@ -4,17 +4,17 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
-public class Replace implements Runnable {
-    private int xStart;
-    private int yStart;
-    private int blockWidth;
-    private int blockHeight;
-    private int iterations;
-    private FillType fillType;
-    private static List<Texture> textureImages = Application.loadTextures();
-    private BufferedImage img;
+public class PaintThread implements Runnable {
+    private final int xStart;
+    private final int yStart;
+    private final int blockWidth;
+    private final int blockHeight;
+    private final int iterations;
+    private final FillType fillType;
+    private static final List<Texture> textureImages = Application.loadTextures();
+    private final BufferedImage img;
 
-    public Replace (int xStart,int yStart, int blockWidth, int blockHeight, int iterations, BufferedImage img, FillType fillType) {
+    public PaintThread(int xStart, int yStart, int blockWidth, int blockHeight, int iterations, BufferedImage img, FillType fillType) {
         this.xStart = xStart;
         this.yStart = yStart;
         this.blockWidth = blockWidth;
@@ -31,7 +31,6 @@ public class Replace implements Runnable {
             System.err.println("No list of textures provided to transform the image");
             return;
         }
-        long startTime = System.nanoTime();
         switch (fillType) {
 
             case ALL_X -> {

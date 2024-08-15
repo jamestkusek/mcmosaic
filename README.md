@@ -34,11 +34,15 @@ Here are some examples of what the program can do with images of different resol
 
 ## Installation
 
-extract zip file and install with 
+This is a maven project. To run, install with:
 ```CLI
 mvn clean install
 ```
+and run with:
 
+```CLI
+java -jar MCMosaic.jar
+```
 ## Usage
 Use the application to add images to the input folder, transform said images and view them in the output folder
 (Supported filetypes: JPEG, PNG, BMP, WBMP, GIF*)

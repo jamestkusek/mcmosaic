@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
@@ -31,7 +32,9 @@ public class Application {
         new File("images/input").mkdirs();
         new File("images/output").mkdirs();
 
+
         gui = AppGUI.generate();
+        gui.setVisible(true);
 
     }
     public static void transformAllImages() {
@@ -42,6 +45,11 @@ public class Application {
         File inputDirectory = new File("images/input");
         File[] files = inputDirectory.listFiles();
 
+        if (files == null) {
+            AppGUI.updateFeedback("the file at mcmosaic/images/input is not a folder, or there was an I/O exception");
+            return;
+        }
+
         for (File inputImage : files) {
 
             List<String> supportedTypes = List.of("png","jpg","wbmp","gif","jpeg","bmp");
@@ -51,7 +59,7 @@ public class Application {
                 String cleanedFileName = inputImage.getName().replace("."+fileType,"");
                 BufferedImage img = loadImage(inputImage);
                 if (img == null) {
-                    AppGUI.reportInfo("Error: " + inputImage.getName() + "is not the file type it claims to be, it cannot be processed");
+                    AppGUI.updateFeedback("Error: " + inputImage.getName() + "is not the file type it claims to be, it cannot be processed");
                     continue;
                 }
                 File outputFile = new File("images/output" + "/" + cleanedFileName + "-mosaic." + fileType);
@@ -60,21 +68,24 @@ public class Application {
                     ImageIO.write(transformImage(img),fileType,outputFile);
                 } catch (IOException e) {
                     System.out.println("Error writing transformed image to output folder");
-                    e.printStackTrace();
+
                 }
 
                 filesProcessed +=1;
             }
             else {
-                AppGUI.reportInfo("Error: " + inputImage.getName() + " is not supported.");
+                AppGUI.updateFeedback("Error: " + inputImage.getName() + " is not supported.");
             }
 
         }
         if (files.length == 0) {
-            AppGUI.reportInfo("No files found in the input folder.");
+            AppGUI.updateFeedback("No files found in the input folder.");
+        }
+        if (files.length == 1){
+            AppGUI.updateFeedback(filesProcessed + " file transformed in " + roundOff((System.nanoTime() - startTime) / 1000000000.0) + " seconds.");
         }
         else {
-            AppGUI.reportInfo(filesProcessed + " file(s) transferred in " + ((System.nanoTime() - startTime) / 1000000000.0) + " seconds.");
+            AppGUI.updateFeedback(filesProcessed + " file(s) transformed in " + roundOff((System.nanoTime() - startTime) / 1000000000.0) + " seconds.");
         }
 
     }
@@ -98,30 +109,29 @@ public class Application {
 
         try (ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
             for (int i = 0; i < width / 16; i++) {
-                Replace newThread = new Replace(leftPadding + 16 * i, topPadding,16,16, height / 16, img, FillType.ALL_X);
+                PaintThread newThread = new PaintThread(leftPadding + 16 * i, topPadding,16,16, height / 16, img, FillType.ALL_X);
                 threadPool.submit(newThread);
             }
 
             if (remainderW != 0) {
-                threadPool.submit(new Replace(0, topPadding,leftPadding,16,height / 16, img, FillType.ALL_X));
-                threadPool.submit(new Replace(width - rightPadding, topPadding,rightPadding,16,height / 16, img, FillType.ALL_X));
+                threadPool.submit(new PaintThread(0, topPadding,leftPadding,16,height / 16, img, FillType.ALL_X));
+                threadPool.submit(new PaintThread(width - rightPadding, topPadding,rightPadding,16,height / 16, img, FillType.ALL_X));
             }
 
             if (remainderH != 0) {
-                threadPool.submit(new Replace(leftPadding, 0,16,topPadding,width / 16, img, FillType.ALL_Y));
-                threadPool.submit(new Replace(leftPadding, height - bottomPadding,16,bottomPadding,width / 16, img, FillType.ALL_Y));
+                threadPool.submit(new PaintThread(leftPadding, 0,16,topPadding,width / 16, img, FillType.ALL_Y));
+                threadPool.submit(new PaintThread(leftPadding, height - bottomPadding,16,bottomPadding,width / 16, img, FillType.ALL_Y));
             }
 
             if (remainderH != 0 && remainderW != 0) {
-                threadPool.submit(new Replace(0,0,leftPadding,topPadding,1,img,FillType.CORNER));
-                threadPool.submit(new Replace(width-rightPadding,0,rightPadding,topPadding,1,img,FillType.CORNER));
-                threadPool.submit(new Replace(0,height-bottomPadding,leftPadding,bottomPadding,1,img,FillType.CORNER));
-                threadPool.submit(new Replace(width-rightPadding,height-bottomPadding,rightPadding,topPadding,1,img,FillType.CORNER));
+                threadPool.submit(new PaintThread(0,0,leftPadding,topPadding,1,img,FillType.CORNER));
+                threadPool.submit(new PaintThread(width-rightPadding,0,rightPadding,topPadding,1,img,FillType.CORNER));
+                threadPool.submit(new PaintThread(0,height-bottomPadding,leftPadding,bottomPadding,1,img,FillType.CORNER));
+                threadPool.submit(new PaintThread(width-rightPadding,height-bottomPadding,rightPadding,topPadding,1,img,FillType.CORNER));
             }
         }
         catch (IllegalArgumentException e) {
             System.out.println("When trying to create a FixedThreadPool, Runtime.getRuntime().availableProcessors() returned an integer <= 0");
-            e.printStackTrace();
         }
 
         return img;
@@ -136,7 +146,6 @@ public class Application {
         }
         catch (IOException e) {
             System.out.println("Error loading image file " + file.getName() +" at " + file.getAbsolutePath());
-            e.printStackTrace();
             return null;
         }
     }
@@ -224,5 +233,14 @@ public class Application {
         return textureImages;
     }
 
+    /**
+     * helper method to round a number of type Double to two decimal places
+     * @param input
+     * @return
+     */
+    public static String roundOff(double input) {
+        DecimalFormat twodp = new DecimalFormat("0.00");
+        return twodp.format(input);
+    }
 
 }

@@ -11,7 +11,6 @@ public class AppGUITest {
     public void generateGUITest() {
         JFrame frame = AppGUI.generate();
         assertNotNull(frame);
-        assertTrue(frame.isVisible());
         assertTrue(frame.isBackgroundSet());
         assertTrue(frame.isMaximumSizeSet());
         assertTrue(frame.isMinimumSizeSet());
@@ -19,10 +18,9 @@ public class AppGUITest {
     }
 
     @Test
-    public void reportInfoTest() {
-        JFrame frame = AppGUI.generate();
-        AppGUI.reportInfo("this is a test");
-        assertEquals("this is a test",AppGUI.transformReport.getText());
+    public void updateFeedbackTest() {
+        AppGUI.updateFeedback("this is a test");
+        assertEquals("this is a test",AppGUI.statusMessage.getText());
 
     }
 }
