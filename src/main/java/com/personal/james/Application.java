@@ -29,27 +29,42 @@ public class Application {
      * @param args a String array object
      */
     public static void main(String[] args){
+
+        //create I/O directories
+        //mkdirs() used to generate parent directory "images"
         new File("images/input").mkdirs();
-        new File("images/output").mkdirs();
+        new File("images/output");
 
-
+        //create GUI instance
         gui = AppGUI.generate();
-        gui.setVisible(true);
+
 
     }
+
+    /**
+     * processes all valid images in the input directory and handles file creation for the output directory
+     */
     public static void transformAllImages() {
 
+        //take note of current time to calculate time taken for function to execute
         long startTime = System.nanoTime();
         int filesProcessed = 0;
 
         File inputDirectory = new File("images/input");
         File[] files = inputDirectory.listFiles();
 
+        //prevent possible NullPointerException on line 62
         if (files == null) {
             AppGUI.updateFeedback("the file at mcmosaic/images/input is not a folder, or there was an I/O exception");
             return;
         }
+        if (files.length == 0) {
+            AppGUI.updateFeedback("No files found in the input folder.");
+            return;
+        }
 
+        // process each file in the directory
+        // inform the user of any issues in processing files via the GUI
         for (File inputImage : files) {
 
             List<String> supportedTypes = List.of("png","jpg","wbmp","gif","jpeg","bmp");
@@ -57,6 +72,7 @@ public class Application {
 
             if (supportedTypes.contains(fileType.toLowerCase())) {
                 String cleanedFileName = inputImage.getName().replace("."+fileType,"");
+
                 BufferedImage img = loadImage(inputImage);
                 if (img == null) {
                     AppGUI.updateFeedback("Error: " + inputImage.getName() + "is not the file type it claims to be, it cannot be processed");
@@ -70,17 +86,15 @@ public class Application {
                     System.out.println("Error writing transformed image to output folder");
 
                 }
-
                 filesProcessed +=1;
             }
+
             else {
                 AppGUI.updateFeedback("Error: " + inputImage.getName() + " is not supported.");
             }
 
         }
-        if (files.length == 0) {
-            AppGUI.updateFeedback("No files found in the input folder.");
-        }
+
         if (files.length == 1){
             AppGUI.updateFeedback(filesProcessed + " file transformed in " + roundOff((System.nanoTime() - startTime) / 1000000000.0) + " seconds.");
         }
@@ -92,7 +106,7 @@ public class Application {
 
 
     /**
-     * Takes a BufferedImage and uses multi-threading to transform the image, saving the output to a local folder.
+     * Takes a BufferedImage and uses multi-threading to transform the image
      * @param img a BufferedImage object
      */
     public static BufferedImage transformImage(BufferedImage img) {
@@ -106,13 +120,18 @@ public class Application {
         int topPadding = remainderH / 2;
         int bottomPadding = remainderH - topPadding;
 
-
+        //a threadPool is used to limit the number of threads executing at once
         try (ExecutorService threadPool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())) {
+
+            //new thread created for each 16px column of the image, to process image faster
+            //16px is chosen as this is the dimensions of Minecraft's default textures, 16x16
+
             for (int i = 0; i < width / 16; i++) {
                 PaintThread newThread = new PaintThread(leftPadding + 16 * i, topPadding,16,16, height / 16, img, FillType.ALL_X);
                 threadPool.submit(newThread);
             }
 
+            //deal with edges of an image where width/height is not a multiple of 16
             if (remainderW != 0) {
                 threadPool.submit(new PaintThread(0, topPadding,leftPadding,16,height / 16, img, FillType.ALL_X));
                 threadPool.submit(new PaintThread(width - rightPadding, topPadding,rightPadding,16,height / 16, img, FillType.ALL_X));
@@ -131,7 +150,7 @@ public class Application {
             }
         }
         catch (IllegalArgumentException e) {
-            System.out.println("When trying to create a FixedThreadPool, Runtime.getRuntime().availableProcessors() returned an integer <= 0");
+            AppGUI.updateFeedback("When trying to create a FixedThreadPool, Runtime.getRuntime().availableProcessors() returned an integer <= 0");
         }
 
         return img;
@@ -145,7 +164,7 @@ public class Application {
             return ImageIO.read(file);
         }
         catch (IOException e) {
-            System.out.println("Error loading image file " + file.getName() +" at " + file.getAbsolutePath());
+            AppGUI.updateFeedback("Error loading image file " + file.getName() +" at " + file.getAbsolutePath());
             return null;
         }
     }
@@ -160,19 +179,21 @@ public class Application {
      * @return a Color object representing the average color of the desired 16x16 area
      */
     public static Color findAvgBlockColor(BufferedImage img, int startX, int startY, int width, int height) {
-        int rAvg = 0;
-        int gAvg = 0;
-        int bAvg = 0;
-        for (int row = 0;row<width;row++) {
-            for (int column = 0; column < height;column++ ) {
+        int rAvg, gAvg, bAvg;
+        rAvg = gAvg = bAvg = 0;
+        for (int row = 0; row<width; row++) {
+            for (int column = 0; column < height; column++ ) {
+
+                //first 3 bytes represent RGB values
                 int pixelColor = img.getRGB(startX+row,startY+column);
+
+                //bit shifting to extract each byte, and bitwise comparison to convert to base 10
                 rAvg += (pixelColor & 0xff0000) >> 16;
                 gAvg += (pixelColor & 0xff00) >> 8;
                 bAvg += pixelColor & 0xff;
             }
         }
         int pixelCount = width * height;
-
         return new Color(rAvg/pixelCount, gAvg/pixelCount, bAvg/pixelCount);
     }
 
@@ -180,12 +201,13 @@ public class Application {
     /**
      * Given a Color, List of Texture objects, this method will find the Texture who's average color is closest to the given color
      * @param avgColorOfBlock a Color object
-     * @param textureImages a List of Texture objects
-     * @return Texture object who's average image color is closest to avgColorOfBlock
+     * @param textureImages an ArrayList of Texture objects
+     * @return the Texture from the list with the closest avg color to avgColorOfBlock
      */
     public static Texture findClosestTextureTo(Color avgColorOfBlock, List<Texture> textureImages){
 
-        double distance = 1000; //max distance possible between colors is ~441 in RGB color space
+        //max distance possible between colors is ~441 in RGB color space
+        double distance = 1000;
         Texture closest = null;
 
         int avgR = avgColorOfBlock.getRed();
@@ -209,21 +231,23 @@ public class Application {
 
     /**
      * generate a List of Texture objects from a local text file, using a local directory of images
-     * @return a List of Texture Objects
+     * @return an ArrayList of Texture Objects
      */
     public static List<Texture> loadTextures() {
         List<Texture> textureImages = new ArrayList<>();
-        Scanner scanner = null;
+        Scanner scanner;
         File textureInfo = new File("external-resources/textureInfo.txt");
+
         try {
             scanner = new Scanner(textureInfo);
         } catch (FileNotFoundException e) {
-            System.err.println("Error trying to open textureInfo.txt: FileNotFoundException");
+            AppGUI.updateFeedback("Error trying to open textureInfo.txt: FileNotFoundException");
             return null;
         }
 
         scanner.nextLine();
         scanner.useDelimiter(",");
+
         while (scanner.hasNextLine()) {
             String name = scanner.next();
             textureImages.add(new Texture(loadImage(new File("external-resources/textures/" + name)),name));
@@ -235,12 +259,12 @@ public class Application {
 
     /**
      * helper method to round a number of type Double to two decimal places
-     * @param input
-     * @return
+     * @param input a double
+     * @return a String representing the input rounded to 2 decimal places
      */
     public static String roundOff(double input) {
-        DecimalFormat twodp = new DecimalFormat("0.00");
-        return twodp.format(input);
+        DecimalFormat twoDP = new DecimalFormat("0.00");
+        return twoDP.format(input);
     }
 
 }

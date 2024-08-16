@@ -2,8 +2,6 @@ package com.personal.james;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 
@@ -71,8 +69,7 @@ public class AppGUI {
             Desktop.getDesktop().open(new File("images/input"));
         }
         catch (IOException e) {
-            System.out.println("/images/input folder not found");
-            e.printStackTrace();
+            updateFeedback("/images/input folder not found");
         }});
         button2.setText("Open input folder");
 
@@ -81,11 +78,11 @@ public class AppGUI {
         button3.setFocusPainted(false);
         button3.setPreferredSize(new Dimension(300,50));
         button3.setMargin(new Insets(10,10,10,10));
-        button3.addActionListener(e -> {try{
+        button3.addActionListener(x -> {try{
             Desktop.getDesktop().open(new File("images/output"));
         }
-        catch (IOException z) {
-            z.printStackTrace();
+        catch (IOException e) {
+            updateFeedback("/images/output folder not found");
         }});
         button3.setText("Open output folder");
 
@@ -99,22 +96,20 @@ public class AppGUI {
         appGUI.add(leftPanel,BorderLayout.WEST);
         appGUI.add(rightPanel,BorderLayout.EAST);
 
+        appGUI.setVisible(true);
+
         return appGUI;
     }
 
     /**
      * Updates the GUI to display info from the Application class
-     * TODO: make sure at least 2-3 seconds between messages
      * @param message, a String object
+     * NOTE: This is not a great implementation, if this function is called many times it does not work as intended
+     * NOTE: it is good enough for this project
      */
     public static void updateFeedback(String message) {
         statusMessage.setText(message);
-    Timer timer = new Timer(5000, new ActionListener() {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            statusMessage.setText("");
-        }
-    });
+    Timer timer = new Timer(5000, e -> statusMessage.setText(""));
     timer.setRepeats(false);
     timer.start();
     }
