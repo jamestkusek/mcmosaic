@@ -1,8 +1,7 @@
-
-
 import com.personal.james.Application;
 import com.personal.james.Texture;
 import org.junit.jupiter.api.Test;
+
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;

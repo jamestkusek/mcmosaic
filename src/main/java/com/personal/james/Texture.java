@@ -5,8 +5,8 @@ import java.awt.image.BufferedImage;
 
 public class Texture {
 
-    private BufferedImage img;
-    private String name;
+    private final BufferedImage img;
+    private final String name;
     int R;
     int G;
     int B;
@@ -24,9 +24,6 @@ public class Texture {
         return img;
     }
 
-    public String getName() {
-        return name;
-    }
 
     public int getR() {
         return R;
